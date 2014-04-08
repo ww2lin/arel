@@ -28,41 +28,41 @@ module Arel
       end
 
       private
-      def visit_Arel_Nodes_Ordering o
-        visit_edge o, "expr"
+      def visit_Arel_Nodes_Ordering o, collector
+        visit_edge o, collector, "expr"
       end
 
-      def visit_Arel_Nodes_TableAlias o
-        visit_edge o, "name"
-        visit_edge o, "relation"
+      def visit_Arel_Nodes_TableAlias o, collector
+        collector = visit_edge o, collector, "name"
+        visit_edge o, collector, "relation"
       end
 
-      def visit_Arel_Nodes_Count o
-        visit_edge o, "expressions"
-        visit_edge o, "distinct"
+      def visit_Arel_Nodes_Count o, collector
+        collector = visit_edge o, collector, "expressions"
+        visit_edge o, collector, "distinct"
       end
 
-      def visit_Arel_Nodes_Values o
-        visit_edge o, "expressions"
+      def visit_Arel_Nodes_Values o, collector
+        visit_edge o, collector, "expressions"
       end
 
-      def visit_Arel_Nodes_StringJoin o
-        visit_edge o, "left"
+      def visit_Arel_Nodes_StringJoin o, collector
+        visit_edge o, collector, "left"
       end
 
-      def visit_Arel_Nodes_InnerJoin o
-        visit_edge o, "left"
-        visit_edge o, "right"
+      def visit_Arel_Nodes_InnerJoin o, collector
+        collector = visit_edge o, collector, "left"
+        visit_edge o, collector, "right"
       end
       alias :visit_Arel_Nodes_OuterJoin :visit_Arel_Nodes_InnerJoin
 
-      def visit_Arel_Nodes_DeleteStatement o
-        visit_edge o, "relation"
-        visit_edge o, "wheres"
+      def visit_Arel_Nodes_DeleteStatement o, collector
+        collector = visit_edge o, collector, "relation"
+        visit_edge o, collector, "wheres"
       end
 
-      def unary o
-        visit_edge o, "expr"
+      def unary o, collector
+        visit_edge o, colelctor, "expr"
       end
       alias :visit_Arel_Nodes_Group             :unary
       alias :visit_Arel_Nodes_Grouping          :unary
@@ -78,23 +78,23 @@ module Arel
       alias :visit_Arel_Nodes_Rows              :unary
       alias :visit_Arel_Nodes_Range             :unary
 
-      def window o
-        visit_edge o, "orders"
-        visit_edge o, "framing"
+      def window o, collector
+        collector = visit_edge o, collector, "orders"
+        visit_edge o, collector,  "framing"
       end
       alias :visit_Arel_Nodes_Window            :window
 
-      def named_window o
-        visit_edge o, "orders"
-        visit_edge o, "framing"
-        visit_edge o, "name"
+      def named_window o, collector
+        collector = visit_edge o, collector, "orders"
+        collector = visit_edge o, collector, "framing"
+        visit_edge o, collector, "name"
       end
       alias :visit_Arel_Nodes_NamedWindow       :named_window
 
-      def function o
-        visit_edge o, "expressions"
-        visit_edge o, "distinct"
-        visit_edge o, "alias"
+      def function o, collector
+        collector = visit_edge o, collector, "expressions"
+        collector = visit_edge o, collector, "distinct"
+        visit_edge o, collector, "alias"
       end
       alias :visit_Arel_Nodes_Exists :function
       alias :visit_Arel_Nodes_Min    :function
@@ -102,52 +102,52 @@ module Arel
       alias :visit_Arel_Nodes_Avg    :function
       alias :visit_Arel_Nodes_Sum    :function
 
-      def extract o
-        visit_edge o, "expressions"
-        visit_edge o, "alias"
+      def extract o, collector
+        collector = visit_edge o, collector, "expressions"
+        visit_edge o, collector, "alias"
       end
       alias :visit_Arel_Nodes_Extract :extract
 
-      def visit_Arel_Nodes_NamedFunction o
-        visit_edge o, "name"
-        visit_edge o, "expressions"
-        visit_edge o, "distinct"
-        visit_edge o, "alias"
+      def visit_Arel_Nodes_NamedFunction o, colector
+        collector = visit_edge o, collector, "name"
+       	collector = visit_edge o, collector, "expressions"
+        collector = visit_edge o, collector, "distinct"
+        visit_edge o, collector, "alias"
       end
 
-      def visit_Arel_Nodes_InsertStatement o
-        visit_edge o, "relation"
-        visit_edge o, "columns"
-        visit_edge o, "values"
+      def visit_Arel_Nodes_InsertStatement o, collector,
+        collector = visit_edge o, collector, "relation"
+        collector = visit_edge o, collector, "columns"
+        visit_edge o, collector, "values"
       end
 
-      def visit_Arel_Nodes_SelectCore o
-        visit_edge o, "source"
-        visit_edge o, "projections"
-        visit_edge o, "wheres"
-        visit_edge o,  "windows"
+      def visit_Arel_Nodes_SelectCore o, collector
+        collector = visit_edge o, collector, "source"
+        collector = visit_edge o, collector, "projections"
+        collector = visit_edge o, collector, "wheres"
+        visit_edge o, collector, "windows"
       end
 
-      def visit_Arel_Nodes_SelectStatement o
-        visit_edge o, "cores"
-        visit_edge o, "limit"
-        visit_edge o, "orders"
-        visit_edge o, "offset"
+      def visit_Arel_Nodes_SelectStatement o, collector
+        collector = visit_edge o, collector, "cores"
+        collector = visit_edge o, collector, "limit"
+        collector = visit_edge o, collector, "orders"
+        visit_edge o, collector, "offset"
       end
 
-      def visit_Arel_Nodes_UpdateStatement o
-        visit_edge o, "relation"
-        visit_edge o, "wheres"
-        visit_edge o, "values"
+      def visit_Arel_Nodes_UpdateStatement o, collector
+        collector = visit_edge o, collector, "relation"
+        collector = visit_edge o, collector, "wheres"
+        visit_edge o, collector, "values"
       end
 
-      def visit_Arel_Table o
-        visit_edge o, "name"
+      def visit_Arel_Table o, collector
+        visit_edge o, collector, "name"
       end
 
-      def visit_Arel_Attribute o
-        visit_edge o, "relation"
-        visit_edge o, "name"
+      def visit_Arel_Attribute o, collector
+        collector = visit_edge o, collector, "relation"
+        visit_edge o, collector, "name"
       end
       alias :visit_Arel_Attributes_Integer :visit_Arel_Attribute
       alias :visit_Arel_Attributes_Float :visit_Arel_Attribute
@@ -156,16 +156,17 @@ module Arel
       alias :visit_Arel_Attributes_Boolean :visit_Arel_Attribute
       alias :visit_Arel_Attributes_Attribute :visit_Arel_Attribute
 
-      def nary o
+      def nary o, collector,
         o.children.each_with_index do |x,i|
-          edge(i) { visit x }
+          edge(i) { collector = visit x, collector }
         end
+		return collector
       end
       alias :visit_Arel_Nodes_And :nary
 
-      def binary o
-        visit_edge o, "left"
-        visit_edge o, "right"
+      def binary o, collector
+        collector = visit_edge o, collector, "left"
+        visit_edge o, collector, "right"
       end
       alias :visit_Arel_Nodes_As                 :binary
       alias :visit_Arel_Nodes_Assignment         :binary
@@ -184,7 +185,7 @@ module Arel
       alias :visit_Arel_Nodes_Or                 :binary
       alias :visit_Arel_Nodes_Over               :binary
 
-      def visit_String o
+      def visit_String o, collector
         @node_stack.last.fields << o
       end
       alias :visit_Time :visit_String
@@ -200,23 +201,25 @@ module Arel
       alias :visit_Symbol :visit_String
       alias :visit_Arel_Nodes_SqlLiteral :visit_String
 
-      def visit_Hash o
+      def visit_Hash o, collector
         o.each_with_index do |pair, i|
-          edge("pair_#{i}")   { visit pair }
+          edge("pair_#{i}")   { collector =  visit pair, collector }
         end
+		return collector 
       end
 
-      def visit_Array o
+      def visit_Array o, collector
         o.each_with_index do |x,i|
-          edge(i) { visit x }
+          edge(i) { collector = visit x, collector }
         end
+		return collector
       end
 
-      def visit_edge o, method
-        edge(method) { visit o.send(method) }
+      def visit_edge o, collector, method
+        edge(method) {  visit o.send(method), collector }
       end
 
-      def visit o
+      def visit o, collector
         if node = @seen[o.object_id]
           @edge_stack.last.to = node
           return

@@ -2,55 +2,69 @@ module Arel
   module Visitors
     class MySQL < Arel::Visitors::ToSql
       private
-      def visit_Arel_Nodes_Union o, suppress_parens = false
+      def visit_Arel_Nodes_Union o, collector, suppress_parens = false
         left_result = case o.left
                       when Arel::Nodes::Union
-                        visit_Arel_Nodes_Union o.left, true
+                        collector1 = visit_Arel_Nodes_Union o.left, collector, true
                       else
-                        visit o.left
+                        collector1 = visit o.left, collector
                       end
 
         right_result = case o.right
                        when Arel::Nodes::Union
-                         visit_Arel_Nodes_Union o.right, true
+                         collector2 = visit_Arel_Nodes_Union o.right, collector, true
                        else
-                         visit o.right
+                         collector2 = visit o.right, collector
                        end
 
         if suppress_parens
-          "#{left_result} UNION #{right_result}"
+          collector  = collector1
+          collector << ' UNION '
+          collector << collectoer2;
         else
-          "( #{left_result} UNION #{right_result} )"
+          collector << '( '
+          collector  = collector1
+          collector << ' UNION '
+          collector << collectoer2;
+          collector << ' )'
         end
       end
 
-      def visit_Arel_Nodes_Bin o
-        "BINARY #{visit o.expr}"
+      def visit_Arel_Nodes_Bin o, collector
+        collector<<"BINARY "
+        visit o.expr, collector
       end
 
       ###
       # :'(
       # http://dev.mysql.com/doc/refman/5.0/en/select.html#id3482214
-      def visit_Arel_Nodes_SelectStatement o
+      def visit_Arel_Nodes_SelectStatement o, collector
         if o.offset && !o.limit
           o.limit = Arel::Nodes::Limit.new(Nodes.build_quoted(18446744073709551615))
         end
         super
       end
 
-      def visit_Arel_Nodes_SelectCore o
+      def visit_Arel_Nodes_SelectCore o, collector
         o.froms ||= Arel.sql('DUAL')
         super
       end
 
-      def visit_Arel_Nodes_UpdateStatement o
-        [
-          "UPDATE #{visit o.relation}",
-          ("SET #{o.values.map { |value| visit value }.join ', '}" unless o.values.empty?),
-          ("WHERE #{o.wheres.map { |x| visit x }.join ' AND '}" unless o.wheres.empty?),
-          ("ORDER BY #{o.orders.map { |x| visit x }.join(', ')}" unless o.orders.empty?),
-          (visit(o.limit) if o.limit),
-        ].compact.join ' '
+      def visit_Arel_Nodes_UpdateStatement o, collector
+        collector << 'UPDATE '
+        collector = visit o.relation, collector
+        
+        collector <<'SET ' unless o.values.empty?
+        o.values.each_with_index { |value i| collector << ' , ' unless i == 0; collector = visit value, collector }
+        
+        collector <<'WHERE ' unless o.wheres.empty?
+        o.wheres.each_with_index { |value i| collector << ' AND ' unless i == 0; collector = visit value, collector }
+        
+        collector <<'ORDER BY ' unless o.orders.empty?
+        o.wheres.each_with_index { |value i| collector << ' , ' unless i == 0; collector = visit value, collector }
+        
+        collector = visit(o.limit, collector ) if o.limit
+        return collector
       end
 
     end

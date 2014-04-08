@@ -3,8 +3,8 @@ module Arel
     class Oracle < Arel::Visitors::ToSql
       private
 
-      def visit_Arel_Nodes_SelectStatement o
-        o = order_hacks(o)
+      def visit_Arel_Nodes_SelectStatement o, collector
+        o = order_hacks(o, collector)
 
         # if need to select first records without ORDER BY and GROUP BY and without DISTINCT
         # then can use simple ROWNUM in WHERE clause
@@ -21,20 +21,21 @@ module Arel
           offset   = o.offset
           o.offset = nil
           sql = super(o)
-          return <<-eosql
-              SELECT * FROM (
-                SELECT raw_sql_.*, rownum raw_rnum_
-                FROM (#{sql}) raw_sql_
-                WHERE rownum <= #{offset.expr.to_i + limit}
-              )
-              WHERE #{visit offset}
-          eosql
+          
+          collector << "SELECT * FROM (
+                        SELECT raw_sql_.*, rownum raw_rnum_
+                        FROM (#{sql}) raw_sql_
+                        WHERE rownum <= #{offset.expr.to_i + limit}
+                        )
+                        WHERE "
+          visit offset collector
         end
 
         if o.limit
           o       = o.dup
           limit   = o.limit.expr
-          return "SELECT * FROM (#{super(o)}) WHERE ROWNUM <= #{visit limit}"
+          collector << "SELECT * FROM (#{super(o)}) WHERE ROWNUM <= "
+          visit limit, collector
         end
 
         if o.offset
@@ -42,30 +43,33 @@ module Arel
           offset   = o.offset
           o.offset = nil
           sql = super(o)
-          return <<-eosql
-              SELECT * FROM (
-                SELECT raw_sql_.*, rownum raw_rnum_
-                FROM (#{sql}) raw_sql_
-              )
-              WHERE #{visit offset}
-          eosql
+          
+          collector << "SELECT * FROM (
+                        SELECT raw_sql_.*, rownum raw_rnum_
+                        FROM (#{sql}) raw_sql_
+                        )
+                        WHERE "
+          visit offset collector
         end
 
         super
       end
 
-      def visit_Arel_Nodes_Limit o
+      def visit_Arel_Nodes_Limit o, collector
       end
 
-      def visit_Arel_Nodes_Offset o
-        "raw_rnum_ > #{visit o.expr}"
+      def visit_Arel_Nodes_Offset o, collector
+        collector << 'raw_rnum_ > '
+        visit o.expr, collector
       end
 
-      def visit_Arel_Nodes_Except o
-        "( #{visit o.left } MINUS #{visit o.right} )"
+      def visit_Arel_Nodes_Except o, collector
+        collector = visit o.left collector
+        collector << ' MINUS '
+        visit o.right collector
       end
 
-      def visit_Arel_Nodes_UpdateStatement o
+      def visit_Arel_Nodes_UpdateStatement o, collector
         # Oracle does not allow ORDER BY/LIMIT in UPDATEs.
         if o.orders.any? && o.limit.nil?
           # However, there is no harm in silently eating the ORDER BY clause if no LIMIT has been provided,
@@ -79,7 +83,7 @@ module Arel
 
       ###
       # Hacks for the order clauses specific to Oracle
-      def order_hacks o
+      def order_hacks o, collector
         return o if o.orders.empty?
         return o unless o.cores.any? do |core|
           core.projections.any? do |projection|
@@ -91,7 +95,7 @@ module Arel
         #
         # orders   = o.orders.map { |x| visit x }.join(', ').split(',')
         orders   = o.orders.map do |x|
-          string = visit x
+          string = visit x, collector
           if string.include?(',')
             split_order_string(string)
           else

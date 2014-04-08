@@ -7,13 +7,13 @@ module Arel
 
       private
 
-      def visit o
+      def visit o, collector
         super
-        @block.call o
+        @block.call o, collector
       end
 
-      def unary o
-        visit o.expr
+      def unary o, collector
+        visit o.expr, collector
       end
       alias :visit_Arel_Nodes_Group             :unary
       alias :visit_Arel_Nodes_Grouping          :unary
@@ -28,10 +28,10 @@ module Arel
       alias :visit_Arel_Nodes_Top               :unary
       alias :visit_Arel_Nodes_UnqualifiedColumn :unary
 
-      def function o
-        visit o.expressions
-        visit o.alias
-        visit o.distinct
+      def function o, collector,
+        collector = visit o.expressions, collector
+        collector = visit o.alias, collector
+        visit o.distinct, collector
       end
       alias :visit_Arel_Nodes_Avg    :function
       alias :visit_Arel_Nodes_Exists :function
@@ -39,27 +39,27 @@ module Arel
       alias :visit_Arel_Nodes_Min    :function
       alias :visit_Arel_Nodes_Sum    :function
 
-      def visit_Arel_Nodes_NamedFunction o
-        visit o.name
-        visit o.expressions
-        visit o.distinct
-        visit o.alias
+      def visit_Arel_Nodes_NamedFunction o, collector
+        collector = visit o.name, collector
+        collector = visit o.expressions, collector
+        collector = visit o.distinct, collector
+        visit o.alias, collector
       end
 
-      def visit_Arel_Nodes_Count o
-        visit o.expressions
-        visit o.alias
-        visit o.distinct
+      def visit_Arel_Nodes_Count o, collector
+        collector = visit o.expressions, collector
+        collector = visit o.alias, collector
+        visit o.distinct, collector
       end
 
-      def nary o
-        o.children.each { |child| visit child}
+      def nary o, collector
+        o.children.each { |child| visit child, collector}
       end
       alias :visit_Arel_Nodes_And :nary
 
-      def binary o
-        visit o.left
-        visit o.right
+      def binary o, collector
+        collector = visit o.left, collector
+        visit o.right, collector
       end
       alias :visit_Arel_Nodes_As                 :binary
       alias :visit_Arel_Nodes_Assignment         :binary
@@ -83,13 +83,13 @@ module Arel
       alias :visit_Arel_Nodes_TableAlias         :binary
       alias :visit_Arel_Nodes_Values             :binary
 
-      def visit_Arel_Nodes_StringJoin o
-        visit o.left
+      def visit_Arel_Nodes_StringJoin o, collector
+        visit o.left, collector
       end
 
-      def visit_Arel_Attribute o
-        visit o.relation
-        visit o.name
+      def visit_Arel_Attribute o, collector
+        collector = visit o.relation, collector
+        visit o.name, collector
       end
       alias :visit_Arel_Attributes_Integer :visit_Arel_Attribute
       alias :visit_Arel_Attributes_Float :visit_Arel_Attribute
@@ -99,11 +99,11 @@ module Arel
       alias :visit_Arel_Attributes_Attribute :visit_Arel_Attribute
       alias :visit_Arel_Attributes_Decimal :visit_Arel_Attribute
 
-      def visit_Arel_Table o
-        visit o.name
+      def visit_Arel_Table o, collector
+        visit o.name, collector
       end
 
-      def terminal o
+      def terminal o, collector
       end
       alias :visit_ActiveSupport_Multibyte_Chars :terminal
       alias :visit_ActiveSupport_StringInquirer  :terminal
@@ -126,43 +126,46 @@ module Arel
       alias :visit_Time                          :terminal
       alias :visit_TrueClass                     :terminal
 
-      def visit_Arel_Nodes_InsertStatement o
-        visit o.relation
-        visit o.columns
-        visit o.values
+      def visit_Arel_Nodes_InsertStatement o, collector
+        collector = visit o.relation, collector
+        collector = visit o.columns, collector
+        visit o.values, collector
       end
 
-      def visit_Arel_Nodes_SelectCore o
-        visit o.projections
-        visit o.source
-        visit o.wheres
-        visit o.groups
-        visit o.windows
-        visit o.having
+      def visit_Arel_Nodes_SelectCore o, collector
+        collector = visit o.projections, collector
+        collector = visit o.source, collector
+        collector = visit o.wheres, collector
+        collector = visit o.groups, collector
+        collector = visit o.windows, collector
+        visit o.having, collector
       end
 
-      def visit_Arel_Nodes_SelectStatement o
-        visit o.cores
-        visit o.orders
-        visit o.limit
-        visit o.lock
-        visit o.offset
+      def visit_Arel_Nodes_SelectStatement o, collector
+        collector = visit o.cores, collector
+        collector = visit o.orders, collector
+        collector = visit o.limit, collector
+        collector = visit o.lock, collector
+        visit o.offset, collector
       end
 
-      def visit_Arel_Nodes_UpdateStatement o
-        visit o.relation
-        visit o.values
-        visit o.wheres
-        visit o.orders
-        visit o.limit
+      def visit_Arel_Nodes_UpdateStatement o, collector
+        collector = visit o.relation, collector
+        collector = visit o.values, collector
+        collector = visit o.wheres, collector
+        collector = visit o.orders, collector
+        visit o.limit, collector
       end
 
-      def visit_Array o
-        o.each { |i| visit i }
+      def visit_Array o, collector
+        o.each { |i| collector = visit i , collector}
+		return collector
       end
 
-      def visit_Hash o
-        o.each { |k,v| visit(k); visit(v) }
+      def visit_Hash o, collector
+        o.each { |k,v| collector = visit(k, collector); 
+					   collector = visit(v, collector) }
+		return collector
       end
     end
   end

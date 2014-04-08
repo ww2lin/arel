@@ -11,9 +11,10 @@ module Arel
     module JoinSql
       private
 
-      def visit_Arel_Nodes_SelectCore o
-        o.source.right.map { |j| visit j }.join ' '
-      end
+      def visit_Arel_Nodes_SelectCore o, collector
+        o.source.right.map { |j| collector = visit j, collector }.join ' '
+        return collector
+	  end
     end
   end
 end

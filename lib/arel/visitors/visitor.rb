@@ -18,8 +18,8 @@ module Arel
         DISPATCH[self.class]
       end
 
-      def visit object
-        send dispatch[object.class], object 
+      def visit object, collector
+        send dispatch[object.class], object , collector
       rescue NoMethodError => e
         raise e if respond_to?(dispatch[object.class], true)
         superklass = object.class.ancestors.find { |klass|
